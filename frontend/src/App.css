@@ -1,0 +1,142 @@
+/* Premium Design System */
+
+:root {
+  --medical-primary: #0ea5e9;
+  --medical-secondary: #0284c7;
+  --medical-light: #f0f9ff;
+  --medical-dark: #0c4a6e;
+}
+
+/* Glassmorphism Effects */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 32px 0 rgba(14, 165, 233, 0.05);
+}
+
+/* Animations */
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeInScale 0.4s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slideUpFade 0.5s ease-out forwards;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
+/* Dialog & Mask Refinements */
+.login-dialog {
+  border-radius: 24px !important;
+  overflow: hidden;
+  border: none !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1) !important;
+}
+
+.login-dialog .p-dialog-header {
+  background: white;
+  padding: 1.5rem 1.5rem 0.5rem;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+}
+
+.login-dialog .p-dialog-content {
+  background: white;
+  padding: 0 1.5rem 2rem;
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
+}
+
+.glass-mask {
+  background: rgba(15, 23, 42, 0.2) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* Login Dialog Customization */
+.login-dialog .p-dialog-header {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.login-dialog .p-dialog-content {
+  padding-top: 0;
+}
+
+/* Input Focus Glow */
+.input-focus-glow:focus-within {
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15);
+  border-color: rgba(14, 165, 233, 0.4);
+}
+
+/* Typography Enhancements */
+.premium-text-gradient {
+  background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Markdown Styling */
+.markdown-body {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.markdown-body p {
+  margin-bottom: 1rem;
+}
+
+.markdown-body strong {
+  color: var(--medical-dark);
+  font-weight: 600;
+}
+/* Chat Input Enhancements */
+.chat-input {
+  min-height: 56px;
+  max-height: 200px;
+  resize: none;
+  line-height: 1.5;
+  transition: height 0.2s ease;
+}
+
+.chat-input::-webkit-scrollbar {
+  width: 4px;
+}
+
+.chat-input::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
+}

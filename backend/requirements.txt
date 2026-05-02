@@ -1,0 +1,22 @@
+langchain==0.3.2
+fastapi
+uvicorn
+python-multipart
+sentence-transformers
+pypdf
+python-dotenv
+langchain-pinecone
+langchain-openai
+langchain-groq
+langchain-community
+duckduckgo-search
+langgraph
+huggingface-hub==0.34.0
+langchain-huggingface
+google-auth
+google-auth-oauthlib
+python-jose[cryptography]
+sqlalchemy
+pymysql
+requests
+-e .
