@@ -11,9 +11,7 @@
 ---
 
 ## 🌐 Live Demo
-Experience MedVeda-AI live in your browser:
-*   **Frontend**: [https://medveda-ai.onrender.com](https://medveda-ai.onrender.com)
-*   **Backend API**: [https://medveda-backend.onrender.com/health](https://medveda-backend.onrender.com/health)
+Experience MedVeda-AI live in your browser: [https://medveda-ai.onrender.com](https://medveda-ai.onrender.com)
 
 ---
 
