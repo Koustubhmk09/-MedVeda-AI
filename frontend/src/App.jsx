@@ -9,6 +9,8 @@ import { Button } from 'primereact/button';
 import './App.css';
 
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 const App = () => {
   // State Management for Chats
   const [chats, setChats] = useState(() => {
@@ -53,7 +55,7 @@ const App = () => {
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
-        const res = await axios.post('http://localhost:8000/auth/google', {
+        const res = await axios.post(`${API_URL}/auth/google`, {
           token: tokenResponse.access_token,
         });
         
@@ -117,7 +119,7 @@ const App = () => {
 
   const checkHealth = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/health');
+      const res = await axios.get(`${API_URL}/health`);
       setBackendStatus(res.data.status);
     } catch (err) {
       setBackendStatus('offline');
@@ -134,7 +136,7 @@ const App = () => {
       const token = localStorage.getItem('medveda_token');
       if (user && token) {
         try {
-          const res = await axios.get('http://localhost:8000/chats', {
+          const res = await axios.get(`${API_URL}/chats`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (res.data.length > 0) {
@@ -163,7 +165,7 @@ const App = () => {
         const currentChat = chats.find(c => c.id === activeChatId);
         if (currentChat && (!currentChat.messages || currentChat.messages.length === 0)) {
           try {
-            const res = await axios.get(`http://localhost:8000/chats/${activeChatId}`, {
+            const res = await axios.get(`${API_URL}/chats/${activeChatId}`, {
               headers: { Authorization: `Bearer ${token}` }
             });
             setChats(prev => prev.map(c => 
@@ -205,7 +207,7 @@ const App = () => {
     const token = localStorage.getItem('medveda_token');
     if (user && token) {
       try {
-        await axios.delete(`http://localhost:8000/chats/${id}`, {
+        await axios.delete(`${API_URL}/chats/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } catch (err) {
@@ -263,7 +265,7 @@ const App = () => {
 
     try {
       const token = localStorage.getItem('medveda_token');
-      const response = await axios.post('http://localhost:8000/chat', {
+      const response = await axios.post(`${API_URL}/chat`, {
         message: userInputText,
         chat_id: isNewChat ? null : String(activeChatId)
       }, {
