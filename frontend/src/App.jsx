@@ -54,27 +54,33 @@ const App = () => {
 
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
+      // Show loading sequence immediately for responsiveness
+      setIsLoginVisible(false);
+      setIsLoggingIn(true);
+      
       try {
         const res = await axios.post(`${API_URL}/auth/google`, {
           token: tokenResponse.access_token,
         });
         
-        setIsLoginVisible(false);
-        setIsLoggingIn(true);
-        
-        // Premium 2-second delay as requested
+        // Premium 2-second delay as requested, but we start it AFTER the backend responds
+        // or we could start it immediately and wait for both. 
+        // Let's ensure at least 1.5s of animation for the premium feel.
         setTimeout(() => {
           setUser(res.data.user);
           localStorage.setItem('medveda_token', res.data.access_token);
           setIsLoggingIn(false);
-        }, 2000);
+        }, 1500);
       } catch (err) {
         console.error('Login failed', err);
-        alert('Login failed. Please check the backend connection.');
         setIsLoggingIn(false);
+        alert('Login failed. The backend might be offline or CORS might be blocking the request. Please check the backend URL and origins.');
       }
     },
-    onError: () => console.log('Login Failed'),
+    onError: () => {
+      console.log('Login Failed');
+      setIsLoginVisible(false);
+    },
   });
 
   const handleLogout = () => {
@@ -121,14 +127,23 @@ const App = () => {
     try {
       const res = await axios.get(`${API_URL}/health`);
       setBackendStatus(res.data.status);
+      return res.data.status === 'online';
     } catch (err) {
       setBackendStatus('offline');
+      return false;
     }
   };
 
+  // Poll for health if offline (Handles Render cold start)
   useEffect(() => {
-    checkHealth(); // Check only once on load
-  }, []);
+    checkHealth();
+    const interval = setInterval(() => {
+      if (backendStatus !== 'online') {
+        checkHealth();
+      }
+    }, 5000); // Check every 5 seconds if not online
+    return () => clearInterval(interval);
+  }, [backendStatus]);
 
   // Fetch chats from backend if user is logged in
   useEffect(() => {
