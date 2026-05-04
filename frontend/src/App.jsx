@@ -58,24 +58,30 @@ const App = () => {
       setIsLoginVisible(false);
       setIsLoggingIn(true);
       
-      try {
-        const res = await axios.post(`${API_URL}/auth/google`, {
-          token: tokenResponse.access_token,
-        });
-        
-        // Premium 2-second delay as requested, but we start it AFTER the backend responds
-        // or we could start it immediately and wait for both. 
-        // Let's ensure at least 1.5s of animation for the premium feel.
-        setTimeout(() => {
-          setUser(res.data.user);
-          localStorage.setItem('medveda_token', res.data.access_token);
-          setIsLoggingIn(false);
-        }, 1500);
-      } catch (err) {
-        console.error('Login failed', err);
-        setIsLoggingIn(false);
-        alert('Login failed. The backend might be offline or CORS might be blocking the request. Please check the backend URL and origins.');
-      }
+      const tryLogin = async (retries = 3) => {
+        try {
+          const res = await axios.post(`${API_URL}/auth/google`, {
+            token: tokenResponse.access_token,
+          }, { timeout: 15000 }); // Longer timeout for cold starts
+          
+          setTimeout(() => {
+            setUser(res.data.user);
+            localStorage.setItem('medveda_token', res.data.access_token);
+            setIsLoggingIn(false);
+          }, 1500);
+        } catch (err) {
+          if (retries > 0) {
+            console.log(`Login attempt failed, retrying... (${retries} left)`);
+            setTimeout(() => tryLogin(retries - 1), 3000);
+          } else {
+            console.error('Login failed after retries', err);
+            setIsLoggingIn(false);
+            alert('The AI is currently waking up on Render. Please wait a few seconds and try logging in again.');
+          }
+        }
+      };
+
+      tryLogin();
     },
     onError: () => {
       console.log('Login Failed');
@@ -125,23 +131,25 @@ const App = () => {
 
   const checkHealth = async () => {
     try {
-      const res = await axios.get(`${API_URL}/health`);
+      const res = await axios.get(`${API_URL}/health`, { timeout: 5000 });
       setBackendStatus(res.data.status);
       return res.data.status === 'online';
     } catch (err) {
-      setBackendStatus('offline');
+      // If the backend is completely unreachable (Render cold start), 
+      // we show 'initializing' instead of 'offline' to reduce user anxiety.
+      setBackendStatus('initializing');
       return false;
     }
   };
 
-  // Poll for health if offline (Handles Render cold start)
+  // Poll for health if not online (Handles Render cold start)
   useEffect(() => {
     checkHealth();
     const interval = setInterval(() => {
       if (backendStatus !== 'online') {
         checkHealth();
       }
-    }, 5000); // Check every 5 seconds if not online
+    }, 4000); // Check every 4 seconds if not online
     return () => clearInterval(interval);
   }, [backendStatus]);
 
@@ -469,13 +477,12 @@ const App = () => {
         {/* Header */}
         <header className="h-16 flex items-center justify-between px-8 bg-white/80 backdrop-blur-md border-b border-slate-200 z-10 lg:pl-8 pl-16">
           <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full animate-pulse ${
-              backendStatus === 'online' ? 'bg-green-500' : 
-              backendStatus === 'initializing' ? 'bg-yellow-500' : 'bg-red-500'
+            <span className={`w-2 h-2 rounded-full ${
+              backendStatus === 'online' ? 'bg-green-500' : 'bg-yellow-500 animate-pulse'
             }`}></span>
             <span className="text-sm font-medium text-slate-600">
               {backendStatus === 'online' ? 'MedVeda Online' : 
-               backendStatus === 'initializing' ? 'AI Initializing...' : 'AI Offline'}
+               'AI Waking Up... (May take 1 min)'}
             </span>
           </div>
         </header>
@@ -510,16 +517,16 @@ const App = () => {
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     disabled={backendStatus !== 'online'}
-                    placeholder="Describe your health concern or ask a question..."
+                    placeholder={backendStatus === 'online' ? "Describe your health concern or ask a question..." : "Waking up AI, please wait..."}
                     rows={1}
-                    className="w-full py-4 px-6 bg-transparent focus:outline-none text-lg placeholder:text-slate-400 chat-input custom-scrollbar"
+                    className={`w-full py-4 px-6 bg-transparent focus:outline-none text-lg placeholder:text-slate-400 chat-input custom-scrollbar ${backendStatus !== 'online' ? 'opacity-50' : ''}`}
                   />
                   <button
                     onClick={handleSend}
                     disabled={isLoading || !input.trim() || backendStatus !== 'online'}
                     className={`
                       absolute right-3 top-3 bottom-3 px-6 rounded-2xl flex items-center justify-center transition-all
-                      ${isLoading || !input.trim() 
+                      ${isLoading || !input.trim() || backendStatus !== 'online'
                         ? 'bg-slate-100 text-slate-300 pointer-events-none' 
                         : 'bg-medical-600 text-white hover:bg-medical-700 shadow-md active:scale-95'}
                     `}
@@ -595,8 +602,7 @@ const App = () => {
                   rows={1}
                   placeholder={
                     backendStatus === 'online' ? "Ask anything about your health..." : 
-                    backendStatus === 'initializing' ? "AI is waking up, please wait..." : 
-                    "AI is offline. Check your backend terminal."
+                    "AI is waking up (Render Cold Start)..."
                   }
                   className={`w-full p-4 pr-16 bg-transparent focus:outline-none rounded-2xl transition-all placeholder:text-slate-400 chat-input custom-scrollbar ${
                     backendStatus !== 'online' ? 'opacity-50 cursor-not-allowed' : ''
