@@ -12,6 +12,7 @@ from jose import JWTError, jwt
 import threading
 import time
 from datetime import datetime, timedelta
+from sqlalchemy.orm import Session
 from typing import Optional
 
 from src.helper import download_hugging_face_embeddings
