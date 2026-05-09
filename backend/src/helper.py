@@ -1,13 +1,16 @@
 import os
 from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
+import hashlib
 
 # Extract Data From the PDF File
 def load_pdf_file(data_path):
     loader = DirectoryLoader(data_path,
                              glob="*.pdf",
-                             loader_cls=PyPDFLoader)
+                             loader_cls=PyPDFLoader, # type: ignore
+                             show_progress=True,
+                             use_multithreading=True)
 
     documents = loader.load()
     return documents
@@ -24,3 +27,17 @@ def download_hugging_face_embeddings():
     # but HuggingFaceEmbeddings from community is standard for this tutorial.
     embeddings = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2') 
     return embeddings
+
+def generate_ids(text_chunks):
+    """Generates deterministic IDs based on the content of each chunk."""
+    ids = []
+    for chunk in text_chunks:
+        # Create a unique ID by hashing the page content and metadata
+        # This ensures that if the same content is ingested again, the ID will be identical
+        content = chunk.page_content.encode('utf-8')
+        # We can also include metadata like page number to be even more specific
+        metadata = str(sorted(chunk.metadata.items())).encode('utf-8')
+        
+        combined_hash = hashlib.md5(content + metadata).hexdigest()
+        ids.append(combined_hash)
+    return ids
