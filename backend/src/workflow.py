@@ -10,7 +10,6 @@ class AgentState(TypedDict):
     query: str
     contextualized_query: str
     intent: str
-    category: str
     risk_level: str
     db_context: str
     web_context: str
@@ -49,16 +48,16 @@ def create_workflow(llm: ChatGroq, tools: list):
             clean_content = response.content.strip().replace("```json", "").replace("```", "")
             data = json.loads(clean_content)
         except:
-            data = {"intent": "EXPLANATION", "category": "GENERAL", "risk_level": "LOW"}
+            data = {"intent": "MEDICAL_CONCERN", "risk_level": "LOW"}
         
         return {
-            "intent": data.get("intent", "EXPLANATION"),
-            "category": data.get("category", "GENERAL"),
+            "intent": data.get("intent", "MEDICAL_CONCERN"),
             "risk_level": data.get("risk_level", "LOW")
         }
 
     def retriever_node(state: AgentState):
-        if state["category"] == "GENERAL" and state["intent"] == "FACT":
+        # Skip retrieval for greetings and simple facts
+        if state["intent"] in ["GREETING", "FACT"]:
             return {"db_context": "N/A"}
         
         query = state["contextualized_query"]
@@ -66,7 +65,10 @@ def create_workflow(llm: ChatGroq, tools: list):
         return {"db_context": str(results)}
 
     def web_search_node(state: AgentState):
-        # Search web for facts or if it's general
+        # Search web for medical or facts if DB context is thin
+        if state["intent"] == "GREETING":
+            return {"web_context": "N/A"}
+            
         query = state["contextualized_query"]
         results = web_tool.invoke(query)
         return {"web_context": str(results)}
@@ -74,11 +76,10 @@ def create_workflow(llm: ChatGroq, tools: list):
     def generator_node(state: AgentState):
         prompt = generation_template.format(
             intent=state["intent"],
-            category=state["category"],
             db_context=state["db_context"],
             web_context=state["web_context"],
             risk_level=state["risk_level"],
-            query=state["query"] # Use original query for the final response generation to stay true to user's intent
+            query=state["query"]
         )
         
         messages = [
@@ -88,19 +89,15 @@ def create_workflow(llm: ChatGroq, tools: list):
         ]
         
         response = llm.invoke(messages)
-        
         answer = response.content
         
-        # Add dynamic disclaimer based on Safety Logic (Doctor-like tone)
-        if state["category"] == "MEDICAL":
-            if state["risk_level"] == "MEDIUM":
-                disclaimer = "\n\n*A quick note: While I can provide medical information, please consult a qualified healthcare professional for a personal diagnosis.*"
-                if disclaimer not in answer:
-                    answer += disclaimer
-            elif state["risk_level"] == "HIGH":
-                disclaimer = "\n\n**IMPORTANT: This situation may require urgent attention. Please seek immediate medical help or go to the nearest emergency room. Your safety is the first priority.**"
-                if disclaimer not in answer:
-                    answer += disclaimer
+        # Situational Disclaimer Logic: NO disclaimers for GREETING or FACT
+        if state["intent"] in ["MEDICAL_CONCERN", "MEDICINE_REQUEST"]:
+            if "disclaimer" not in answer.lower() and "consult" not in answer.lower():
+                if state["risk_level"] == "HIGH":
+                    answer += "\n\n**IMPORTANT: This situation may require urgent medical attention. Please seek professional help or visit an emergency room immediately.**"
+                else:
+                    answer += "\n\n*A quick note: This is for guidance only. Please consult a qualified doctor for a professional diagnosis.*"
         
         return {"final_answer": answer}
 
